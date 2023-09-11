@@ -6,7 +6,6 @@ use crate::prelude::*;
 use crate::controller::searcher::Mode;
 use crate::controller::searcher::Notification;
 use crate::executor::global::spawn_stream_handler;
-use crate::model::undo_redo::Transaction;
 use crate::presenter;
 use crate::presenter::graph::AstNodeId;
 use crate::presenter::graph::ViewNodeId;
@@ -56,7 +55,6 @@ struct Model {
     input_view:       ViewNodeId,
     view:             component_browser::View,
     mode:             Immutable<Mode>,
-    transaction:      Rc<Transaction>,
 }
 
 impl Model {
@@ -70,7 +68,6 @@ impl Model {
         input_view: ViewNodeId,
         view: component_browser::View,
         mode: Mode,
-        transaction: Rc<Transaction>,
     ) -> Self {
         let provider = default();
         let graph_controller = graph_controller.clone_ref();
@@ -86,7 +83,6 @@ impl Model {
             provider,
             input_view,
             mode,
-            transaction,
         }
     }
 
@@ -215,7 +211,6 @@ impl SearcherPresenter for ComponentBrowserSearcher {
         // added node will affect the AST, and the position will become incorrect.
         let position_in_code = graph_controller.graph().definition_end_location()?;
         let graph = graph_controller.graph();
-        let transaction = graph.get_or_open_transaction("Open searcher");
 
         let mode = Self::init_input_node(parameters, graph_presenter, view.graph(), &graph)?;
 
@@ -239,7 +234,7 @@ impl SearcherPresenter for ComponentBrowserSearcher {
         }
 
         let input = parameters.input;
-        Ok(Self::new(searcher_controller, &graph, graph_presenter, view, input, mode, transaction))
+        Ok(Self::new(searcher_controller, &graph, graph_presenter, view, input, mode))
     }
 
     fn expression_accepted(
@@ -252,7 +247,6 @@ impl SearcherPresenter for ComponentBrowserSearcher {
 
 
     fn abort_editing(self: Box<Self>) {
-        self.model.transaction.ignore();
         self.model.controller.abort_editing();
         if let Mode::EditNode { original_node_id, .. } = *self.model.mode {
             self.model
@@ -281,7 +275,6 @@ impl ComponentBrowserSearcher {
         view: view::project::View,
         input_view: ViewNodeId,
         mode: Mode,
-        transaction: Rc<Transaction>,
     ) -> Self {
         let searcher_view = view.searcher().clone_ref();
         let model = Rc::new(Model::new(
@@ -292,7 +285,6 @@ impl ComponentBrowserSearcher {
             input_view,
             searcher_view,
             mode,
-            transaction,
         ));
         let network = frp::Network::new("presenter::Searcher");
 
