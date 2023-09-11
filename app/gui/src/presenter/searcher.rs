@@ -6,6 +6,7 @@ use crate::prelude::*;
 
 use crate::controller::graph::NewNodeInfo;
 use crate::controller::searcher::Mode;
+use crate::model::module::NodeEditStatus;
 use crate::model::module::NodeMetadata;
 use crate::presenter;
 use crate::presenter::graph::AstNodeId;
@@ -186,6 +187,8 @@ fn initialise_with_this_argument(
 ///
 /// Returns the new node id and optionally the source node which was selected/dragged when
 /// creating this node.
+///
+/// Sets [`NodeEditStatus::Created`] for the created node.
 fn create_input_node(
     parameters: SearcherParams,
     graph: &presenter::Graph,
@@ -207,8 +210,18 @@ fn create_input_node(
     new_node.metadata = Some(metadata);
     new_node.introduce_pattern = false;
     let transaction_name = "Add code for created node's visualization preview.";
-    let _transaction = graph_controller.get_or_open_transaction(transaction_name);
+    let _transaction = graph_controller
+        .undo_redo_repository()
+        .open_ignored_transaction_or_ignore_current(transaction_name);
     let created_node = graph_controller.add_node(new_node)?;
+
+    let module = &graph_controller.module;
+    module.with_node_metadata(
+        created_node,
+        Box::new(|metadata| {
+            metadata.edit_status = Some(NodeEditStatus::Created);
+        }),
+    )?;
 
     graph.assign_node_view_explicitly(input, created_node);
 
