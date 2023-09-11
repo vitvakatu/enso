@@ -512,6 +512,12 @@ impl Searcher {
     /// If `suggestion` is specified, the preview will contains code after applying it.
     /// Otherwise it will be just the current searcher input.
     pub fn preview(&self, suggestion: Option<&component::Suggestion>) -> FallibleResult {
+        let transaction_name = "Previewing Component Browser suggestion.";
+        let _skip = self
+            .graph
+            .undo_redo_repository()
+            .open_ignored_transaction_or_ignore_current(transaction_name);
+
         debug!("Updating node preview. Previewed suggestion: \"{suggestion:?}\".");
         self.clear_temporary_imports();
         let has_this = self.this_var().is_some();
@@ -609,6 +615,11 @@ impl Searcher {
     }
 
     fn clear_temporary_imports(&self) {
+        let transaction_name = "Clearing temporary imports after closing searcher.";
+        let _skip = self
+            .graph
+            .undo_redo_repository()
+            .open_ignored_transaction_or_ignore_current(transaction_name);
         self.graph.graph().clear_temporary_imports();
     }
 
