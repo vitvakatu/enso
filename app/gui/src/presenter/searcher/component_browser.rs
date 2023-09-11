@@ -145,11 +145,21 @@ impl Model {
         if !self.controller.is_input_empty() {
             match self.controller.commit_node() {
                 Ok(ast_id) => {
-                    if let Mode::EditNode { original_node_id, edited_node_id } = *self.mode {
-                        self.graph_presenter
-                            .assign_node_view_explicitly(self.input_view, original_node_id);
-                        if let Err(err) = self.graph_controller.remove_node(edited_node_id) {
-                            error!("Error while removing a temporary node: {err}.");
+                    match *self.mode {
+                        Mode::EditNode { edited_node_id, original_node_id } => {
+                            self.graph_presenter
+                                .assign_node_view_explicitly(self.input_view, original_node_id);
+                            if let Err(err) = self.graph_controller.remove_node(edited_node_id) {
+                                error!("Error while removing a temporary node: {err}.");
+                            }
+                        }
+                        Mode::NewNode { node_id, .. } => {
+                            let module = &self.graph_controller.module;
+                            if let Err(err) = module
+                                .with_node_metadata(node_id, Box::new(|m| m.edit_status = None))
+                            {
+                                error!("Error while removing edit status from a new node: {err}.");
+                            }
                         }
                     }
                     Some(ast_id)
