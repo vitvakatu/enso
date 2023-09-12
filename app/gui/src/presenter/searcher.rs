@@ -47,6 +47,10 @@ pub trait SearcherPresenter: Debug {
     {
         let SearcherParams { input, .. } = parameters;
         let ast_node = graph_presenter.ast_node_of_view(input);
+        let transaction_name = "Init input node";
+        let _transaction = graph_controller
+            .undo_redo_repository()
+            .open_ignored_transaction_or_ignore_current(transaction_name);
 
         let (new_node, source_node) =
             create_input_node(parameters, graph_presenter, graph_editor, graph_controller)?;
@@ -209,10 +213,6 @@ fn create_input_node(
     let mut new_node = NewNodeInfo::new_pushed_back(DEFAULT_INPUT_EXPRESSION);
     new_node.metadata = Some(metadata);
     new_node.introduce_pattern = false;
-    let transaction_name = "Add code for created node's visualization preview.";
-    let _transaction = graph_controller
-        .undo_redo_repository()
-        .open_ignored_transaction_or_ignore_current(transaction_name);
     let created_node = graph_controller.add_node(new_node)?;
 
     let module = &graph_controller.module;

@@ -566,8 +566,8 @@ impl Searcher {
     /// picked suggestions.
     #[profile(Debug)]
     pub fn commit_node(&self) -> FallibleResult<ast::Id> {
-        let _transaction_guard = self.graph.get_or_open_transaction("Commit node");
         self.clear_temporary_imports();
+        let _transaction_guard = self.graph.get_or_open_transaction("Commit node");
 
         let expression = match &self.data.borrow().input.ast {
             input::InputAst::Line(ast) => ast.clone(),
@@ -616,10 +616,7 @@ impl Searcher {
 
     fn clear_temporary_imports(&self) {
         let transaction_name = "Clearing temporary imports after closing searcher.";
-        let _skip = self
-            .graph
-            .undo_redo_repository()
-            .open_ignored_transaction_or_ignore_current(transaction_name);
+        let _skip = self.graph.get_or_open_transaction(transaction_name);
         self.graph.graph().clear_temporary_imports();
     }
 

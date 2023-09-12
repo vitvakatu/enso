@@ -145,10 +145,10 @@ impl Model {
         if !self.controller.is_input_empty() {
             match self.controller.commit_node() {
                 Ok(ast_id) => {
-                    let _skip = self
-                        .graph_controller
-                        .undo_redo_repository()
-                        .open_ignored_transaction_or_ignore_current("Remove temporary node");
+                    // let _skip = self
+                    //     .graph_controller
+                    //     .undo_redo_repository()
+                    //     .open_ignored_transaction_or_ignore_current("Remove temporary node");
                     match *self.mode {
                         Mode::EditNode { edited_node_id, original_node_id } => {
                             self.graph_presenter

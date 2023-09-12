@@ -254,7 +254,7 @@ impl Repository {
             // Apart from the debugging purposes, this deos not affect the undo-redo mechanism in
             // any way.
             let name = name.into();
-            debug!(
+            console_log!(
                 "Adding secondary name to transaction {}: `{name}`",
                 ongoing_transaction.frame.borrow().name
             );
@@ -262,7 +262,7 @@ impl Repository {
             Err(ongoing_transaction)
         } else {
             let name = name.into();
-            debug!("Creating a new transaction `{name}`");
+            console_log!("Creating a new transaction `{name}`");
             let new_transaction = Rc::new(Transaction::new(self, name));
             self.data.borrow_mut().current_transaction = Some(Rc::downgrade(&new_transaction));
             Ok(new_transaction)
@@ -305,7 +305,7 @@ impl Repository {
     }
 
     fn new_undo_frame(&self, frame: Frame) {
-        info!("Adding a new frame to the stack: {frame}. {}", backtrace());
+        console_log!("Adding a new frame to the stack: {frame}. {}", backtrace());
         self.push_to(Stack::Undo, frame);
         self.clear(Stack::Redo)
     }
@@ -318,14 +318,17 @@ impl Repository {
             // If there was a transaction with no snapshots, we will just ignore it.
             // As we create transactions for every user interaction (command), there will be a lot
             // of empty transactions. We do not want to pollute the undo-redo stack with them.
-            debug!("Ignoring empty transaction '{}'. It will be skipped.", transaction.name());
+            console_log!(
+                "Ignoring empty transaction '{}'. It will be skipped.",
+                transaction.name()
+            );
         } else if !transaction.ignored.get() {
             // If the transaction was not ignored, we will add it to the undo stack.
             let frame = transaction.frame.borrow().clone();
-            debug!("Closing transaction '{transaction}'");
+            console_log!("Closing transaction '{transaction}'");
             self.new_undo_frame(frame);
         } else {
-            debug!(
+            console_log!(
                 "Closing the ignored transaction '{transaction}' without adding a frame to the repository.",
             )
         }
@@ -389,7 +392,7 @@ impl Repository {
     /// Pop the top frame from a given stack. [`Err`] if there are no frames to pop.
     fn pop(&self, stack: Stack) -> FallibleResult<Frame> {
         let frame = self.borrow_mut(stack).pop().ok_or(NoFrameToPop(stack))?;
-        debug!(
+        console_log!(
             "Popping a frame from {stack}. Remaining length: {}. Frame: {frame}",
             self.len(stack)
         );
